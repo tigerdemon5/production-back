@@ -114,3 +114,7 @@ credentials.json
 
 #프론트
 templeates/
+
+package-lock.json
+package.json
+swlug-back.yaml

@@ -9,9 +9,10 @@ import java.time.ZoneId;
 public class ApplyService {
 
     public boolean isApplicationPeriod() {
+        LocalDateTime startDate = LocalDateTime.of(2025,2,16,00,00,00);
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         LocalDateTime endDate = LocalDateTime.of(2025, 3, 15, 23, 59, 59);
 
-        return !now.isAfter(endDate);
+        return now.isAfter(startDate) && !now.isAfter(endDate);
     }
 }

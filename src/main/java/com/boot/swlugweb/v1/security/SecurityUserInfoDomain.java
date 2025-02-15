@@ -31,6 +31,6 @@ public class SecurityUserInfoDomain {
 
     @OneToOne()
     @JoinColumn(name = "type_num")
-    private SecurityUserRuleTypeDomain securityUserRuleType;
+    private SecurityUserRoleTypeDomain securityUserRuleType;
 
 }

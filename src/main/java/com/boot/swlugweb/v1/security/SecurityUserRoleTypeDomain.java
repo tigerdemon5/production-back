@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name="user_type")
-public class SecurityUserRuleTypeDomain {
+public class SecurityUserRoleTypeDomain {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

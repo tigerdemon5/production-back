@@ -9,13 +9,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ApplyController {
 
-//    지원페이지 무조건 열어두고 싶을 때
-//    @GetMapping
-//    public Boolean apply() {
-//
-//        return true;
-//    }
-
     private final ApplyService applyService;
 
     @GetMapping
