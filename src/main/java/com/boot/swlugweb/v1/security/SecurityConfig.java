@@ -97,10 +97,14 @@ public class SecurityConfig {
                 )
                 // 패킷 내 보안 기능 설정
                 .headers(headers -> headers
+                        .defaultsDisabled() // 기본 헤더 비활성화
+                        .contentTypeOptions(contentType -> contentType.disable()) // X-Content-Type-Options 제거
+                        .frameOptions(frameOptions -> frameOptions.disable()) // X-Frame-Options 제거
+                        .xssProtection(xss -> xss.disable()) // X-XSS-Protection 제거
                         .httpStrictTransportSecurity(hsts -> hsts
-                        .maxAgeInSeconds(31536000)
-                        .includeSubDomains(true)
-                        .preload(true)
+                                .includeSubDomains(true)
+                                .preload(true)
+                                .maxAgeInSeconds(31536000)
                         )
                 )
 
