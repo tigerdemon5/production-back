@@ -95,18 +95,6 @@ public class SecurityConfig {
                         // 에러 페이지 접근 권한
                         .requestMatchers("/error").permitAll()
                 )
-                // 패킷 내 보안 기능 설정
-                .headers(headers -> headers
-                        .defaultsDisabled() // 기본 헤더 비활성화
-                        .contentTypeOptions(contentType -> contentType.disable()) // X-Content-Type-Options 제거
-                        .frameOptions(frameOptions -> frameOptions.disable()) // X-Frame-Options 제거
-                        .xssProtection(xss -> xss.disable()) // X-XSS-Protection 제거
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .includeSubDomains(true)
-                                .preload(true)
-                                .maxAgeInSeconds(31536000)
-                        )
-                )
 
                 // 커스텀 인증 필터 추가
                 .addFilterAt(customAuthFilter, UsernamePasswordAuthenticationFilter.class);
