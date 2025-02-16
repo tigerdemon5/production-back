@@ -95,6 +95,15 @@ public class SecurityConfig {
                         // 에러 페이지 접근 권한
                         .requestMatchers("/error").permitAll()
                 )
+                // 패킷 내 보안 기능 설정
+                .headers(headers -> headers
+                        .httpStrictTransportSecurity(hsts -> hsts
+                        .maxAgeInSeconds(31536000)
+                        .includeSubDomains(true)
+                        .preload(true)
+                        )
+                )
+
                 // 커스텀 인증 필터 추가
                 .addFilterAt(customAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -109,7 +118,8 @@ public class SecurityConfig {
                 registry.addMapping("/**")                         // 모든 경로에 대해
                         .allowedHeaders("*")                       // 모든 헤더 허용
                         .allowedOrigins("https://www.swlug.com")   // 프론트엔드 주소 허용
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 허용할 HTTP 메서드
+//                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 허용할 HTTP 메서드
+                        .allowedMethods("GET", "POST")
                         .allowCredentials(true)                    // 인증 정보 포함 허용
                         .exposedHeaders("Authorization");          // Authorization 헤더 노출
             }
