@@ -78,7 +78,7 @@ public class NoticeController {
         noticeService.updateNotice(noticeUpdateRequestDto, userId);
         return ResponseEntity.ok().body("{\"redirect\": \"/api/notice\"}");
     }
-    
+
 
     @PostMapping("/delete")
     public ResponseEntity<String> deleteNoticePost(
@@ -92,11 +92,9 @@ public class NoticeController {
         }
 
         noticeService.deleteNotice(id, userId);
-//        return ResponseEntity.ok().body("{\"redirect\": \"/api/notice\"}");
-        return ResponseEntity.status(302)
-                .header(HttpHeaders.LOCATION,"/api/notice")
-                .build();
+        return ResponseEntity.ok().body("{\"redirect\": \"/api/notice\"}");  // 여기가 문제
     }
+    //
 
     @PostMapping("/adjacent")
     public ResponseEntity<Map<String, NoticeSummaryDto>> getAdjacentNotices(@RequestBody Map<String, String> request) {
