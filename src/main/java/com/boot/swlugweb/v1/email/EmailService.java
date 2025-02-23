@@ -5,6 +5,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,6 +21,9 @@ public class EmailService {
     private JavaMailSender mailSender;
     private int authNumber;
     private final HttpSession session;
+
+    @Value("${SMTP_ID")
+    private String smtpId;
 
     //세션 초기화
     public EmailService(HttpSession session) {
@@ -56,15 +60,26 @@ public class EmailService {
     //mail을 어디서 보내는지, 어디로 보내는지, 인증 번호를 html 형식으로 어떻게 보내는지 작성
     public String joinEmail(String email){
         makeNumberRend();
-        String setFrom = "likeeu23@naver.com"; //emailConfig에 설정한 자신의 이메일 주소
+        String setFrom = smtpId; //emailConfig에 설정한 자신의 이메일 주소
         String toMail = email; //controller에서 전달한 사용자 이메일
-        String title = "슈러그 인증번호 입니다.";
-        //이메일 내용 작성 -> html 형식으로 작성하기
-        String content = "안녕하세요. 슈러그입니다. 다음의 인증번호를 웹 페이지에 올바르게 입력해주세요." +
-                "<br><br>" +
-                "인증번호는" + authNumber + "입니다." +
-                "<br>" +
-                "홈페이지로 돌아가 인증번호를 입력해주세요.";
+        String title = "SWLUG 회원가입 이메일 인증 관련 메일입니다.";
+
+        String content = "";
+        content += "<div style='margin:100px;'>";
+        content += "<h1> 서울여자대학교 SWLUG 인증번호 안내 메일입니다.</h1>";
+        content += "<br>";
+        content += "<p>안녕하세요, SWLUG 입니다.<p>";
+        content += "<br>";
+        content += "<p>해당 이메일은 회원가입을 위한 인증번호 안내 메일입니다.<p>";
+        content += "<br>";
+        content += "<p>하단 인증번호를 '이메일 인증번호' 칸에 입력하여 가입을 완료해주세요..<p>";
+        content += "<br>";
+        content += "<div align='center' style='border:1px solid black; font-family:verdana';></br>";
+        content += "<h3 style='color:blue;'>회원가입 인증 코드입니다.</h3></br>";
+        content += "<div style='font-size:130%'>";
+        content += "CODE : <strong>";
+        content += authNumber + "</strong><div><br/> "; // 인증번호 넣기
+        content += "</div>";
 
         mailSend(setFrom, toMail, title, content);
 
