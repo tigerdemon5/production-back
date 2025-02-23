@@ -18,6 +18,8 @@ import java.util.Properties;
 @Configuration
 public class EmailConfig {
 
+    @Value("${SMTP_ID")
+    private String smtpId;
     @Value("${SMTP_PW}")
     private String smtpPw;
 
@@ -28,7 +30,7 @@ public class EmailConfig {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost("smtp.naver.com"); //이메일 전송에 사용할 SMTP 서버 호스트 설정
         mailSender.setPort(465); //포트 지정
-        mailSender.setUsername("likeeu23@naver.com");//구글 계정 받기
+        mailSender.setUsername(smtpId);
         mailSender.setPassword(smtpPw); //구글 앱 비번 넣기
 
         //JavaMail 속성 설정을 위해 Properties 객체 생성
@@ -46,15 +48,4 @@ public class EmailConfig {
 
         return mailSender; //mailSender를 빈으로 등록
     }
-
-//    @Bean
-//    public SecurityFilterChain emailFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .securityMatcher("/email/**")
-//                .csrf((csrf) -> csrf.disable()) //csrf 보호 비활성화
-//                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll()  //해당 경로 모든 요청 허용
-//                );
-//
-//        return http.build();
-//    }
 }
