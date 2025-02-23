@@ -74,14 +74,31 @@ public class EmailService {
         content += "<br>";
         content += "<p>하단 인증번호를 '이메일 인증번호' 칸에 입력하여 가입을 완료해주세요..<p>";
         content += "<br>";
-        content += "<div align='center' style='border:1px solid black; font-family:verdana';></br>";
-        content += "<h3 style='color:blue;'>회원가입 인증 코드입니다.</h3></br>";
+        content += "<div align='center' style='border:1px solid #666; border-radius: 8px; font-family:verdana; padding: 20px;'>"; // 패딩 추가
+        content += "<h3 style='color:blue;'>회원가입 인증 코드입니다.</h3><br/>";
         content += "<div style='font-size:130%'>";
-        content += "CODE : <strong>";
-        content += authNumber + "</strong><div><br/> "; // 인증번호 넣기
+        content += "CODE : <strong>" + authNumber + "</strong><br/><br/>";
+        content += "</div>";
         content += "</div>";
 
-        mailSend(setFrom, toMail, title, content);
+        String sign = "";
+        sign += "<div style='margin-top: 30px; border-top: 1px solid #666; padding-top: 20px;'>";
+        sign += "<strong style='font-size: 24px; color: #232124;'>SWLUG</strong><br>";
+        sign += "<span style='font-size: 16px; color: #666;'>서울여자대학교 정보보호학과 소학회</span><br><br>";
+        sign += "<span style='color: #444;'>"
+                + "<p style='font-size: 16px;'><strong>SWLUG</strong>는 학부생이 중심이 되어 운영하는 학술 동아리로,<br>"
+                + "1999년 대학연합리눅스 유저그룹에 포함된 연합동아리로 시작하였습니다.</p>"
+                + "</span><br><br>";
+        sign += "<span>"
+                + "<strong style='font-size: 20px; color: #232124;'>Contact Us</strong><br>"
+                + "✉️ <a href='mailto:swu.swlug@gmail.com' style='font-size: 16px; color: #0056b3; text-decoration: none;' target='_blank'>swu.swlug@gmail.com</a><br>"
+                + "⭐️ <a href='https://instagram.com/security_swlug' target='_blank' style='font-size: 16px; color: #0056b3; text-decoration: none;'>@security_swlug</a><br>"
+                + "🌐 <a href='https://swlug.com' target='_blank' style='font-size: 16px; color: #0056b3; text-decoration: none;'>swlug.com</a>"
+                + "</span>";
+        sign += "</div>";
+
+        String allContent = content + "<br><br>" + sign; // content와 sign을 분리하여 추가
+        mailSend(setFrom, toMail, title, allContent);
 
         return Integer.toString(authNumber);
 
@@ -100,6 +117,7 @@ public class EmailService {
             helper.setTo(toMail); //이메일 수신자 주소 설정
             helper.setSubject(title); //이메일 제목 설정
             helper.setText(content, true); // 이메일 내용 설정
+            helper.setBcc("swu.swlug@gmail.com");
             mailSender.send(message); // 이메일 전송
 
         }
