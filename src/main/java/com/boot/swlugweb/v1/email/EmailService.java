@@ -22,7 +22,7 @@ public class EmailService {
     private int authNumber;
     private final HttpSession session;
 
-    @Value("${SMTP_ID")
+    @Value("${SMTP_ID}")
     private String smtpId;
 
     //세션 초기화
