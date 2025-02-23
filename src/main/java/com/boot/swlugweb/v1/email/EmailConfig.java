@@ -18,7 +18,7 @@ import java.util.Properties;
 @Configuration
 public class EmailConfig {
 
-    @Value("${SMTP_ID")
+    @Value("${SMTP_ID}")
     private String smtpId;
     @Value("${SMTP_PW}")
     private String smtpPw;
