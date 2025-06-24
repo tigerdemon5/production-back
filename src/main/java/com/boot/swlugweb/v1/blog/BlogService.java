@@ -10,15 +10,15 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+
+import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.google.common.io.Files.getFileExtension;
 
 @Service
 public class BlogService {
@@ -28,82 +28,103 @@ public class BlogService {
 
     private final BlogRepository blogRepository;
     private final MyPageRepository myPageRepository;
+    private final GoogleDriveService googleDriveService;
 
-    public BlogService(BlogRepository blogRepository, MyPageRepository myPageRepository) {
+    public BlogService(BlogRepository blogRepository, MyPageRepository myPageRepository,GoogleDriveService googleDriveService) {
         this.blogRepository = blogRepository;
         this.myPageRepository = myPageRepository;
+        this.googleDriveService = googleDriveService;
     }
 
-    // BlogService.java
-    public String saveImage(MultipartFile file) throws IOException {
-        try {
-            // 파일 유효성 검사
-            if (file.isEmpty()) {
-                throw new IllegalArgumentException("Empty file");
-            }
+//    public String saveImage(MultipartFile file) throws Exception {
+//        if (file == null || file.isEmpty()) throw new IllegalArgumentException("Empty file");
+//
+//        if (file.getSize() > 20 * 1024 * 1024) // 20MB 제한
+//            throw new IllegalArgumentException("File size exceeds maximum limit");
+//
+//        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+//        String extension = getFileExtension(originalFilename).toLowerCase();
+//
+//        Set<String> allowedExtensions = Set.of(
+//                "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif", "tiff", "tif", "svg"
+//        );
+//
+//        if (!allowedExtensions.contains(extension)) {
+//            throw new IllegalArgumentException("Invalid file extension: " + extension);
+//        }
+//
+//        return googleDriveService.uploadFile(file);
+//    }
+//
+//    public BlogDomain createBlog(BlogCreateDto blogCreateDto, String userId) throws Exception {
+//        BlogDomain blogDomain = new BlogDomain();
+//
+//        blogDomain.setUserId(userId);
+//        blogDomain.setBoardCategory(blogCreateDto.getBoardCategory());
+//        blogDomain.setBoardTitle(blogCreateDto.getBoardTitle());
+//        blogDomain.setBoardContents(blogCreateDto.getBoardContent());
+//        blogDomain.setCreateAt(LocalDateTime.now());
+//        blogDomain.setUpdateAt(LocalDateTime.now());
+//        blogDomain.setTag(blogCreateDto.getTag());
+//        blogDomain.setIsPin(false);
+//        blogDomain.setIsSecure(0);
+//        blogDomain.setIsDelete(0);
+//
+//        List<String> uploadedImageUrls = new ArrayList<>();
+//
+//        try {
+//            // 1️⃣ 업로드된 이미지 파일 처리
+//            if (blogCreateDto.getImageFiles() != null) {
+//                for (MultipartFile file : blogCreateDto.getImageFiles()) {
+//                    uploadedImageUrls.add(saveImage(file));
+//                }
+//            }
+//
+//            // 2️⃣ 본문 HTML에 포함된 이미지 URL도 추출해서 저장
+//            Pattern pattern = Pattern.compile("src=[\"']([^\"']+)[\"']");
+//            Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());
+//
+//            while (matcher.find()) {
+//                String imageUrl = matcher.group(1);
+//                if (!uploadedImageUrls.contains(imageUrl)) {
+//                    uploadedImageUrls.add(imageUrl);
+//                }
+//            }
+//
+//        } catch (Exception e) {
+//            // 업로드한 이미지 모두 삭제
+//            uploadedImageUrls.forEach(this::deleteImage);
+//            throw e;
+//        }
+//
+//        blogDomain.setImage(uploadedImageUrls);
+//
+//        return blogRepository.save(blogDomain);
+//    }
 
-            // 파일 크기 검사 (10MB)
-            if (file.getSize() > 20 * 1024 * 1024) {
-                throw new IllegalArgumentException("File size exceeds maximum limit");
-            }
 
-            // 파일 확장자 검사
-            String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-            String extension = getFileExtension(originalFilename).toLowerCase();
-            Set<String> allowedExtensions = new HashSet<>(Arrays.asList(
-                    "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif", "tiff", "tif", "svg"
-            ));
+    //test0621
+    public String saveImage(MultipartFile file) throws Exception {
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("Empty file");
 
-            if (!allowedExtensions.contains(extension)) {
-                throw new IllegalArgumentException("Invalid file extension");
-            }
+        if (file.getSize() > 20 * 1024 * 1024) // 20MB 제한
+            throw new IllegalArgumentException("File size exceeds maximum limit");
 
-            // 고유한 파일명 생성
-            String newFilename = UUID.randomUUID().toString() + "." + extension;
-            Path uploadPath = Paths.get(uploadDir);
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String extension = getFileExtension(originalFilename).toLowerCase();
 
-            // 업로드 디렉토리가 없으면 생성
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-                System.out.println("Created upload directory: " + uploadPath.toAbsolutePath());
-            }
+        Set<String> allowedExtensions = Set.of(
+                "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif", "tiff", "tif", "svg"
+        );
 
-            // 파일 저장
-            Path destinationFile = uploadPath.resolve(newFilename);
-            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("File saved at: " + destinationFile.toAbsolutePath());
-
-            // 접근 가능한 URL 반환
-            return "/api/blog/images/" + newFilename;
-        } catch (IOException e) {
-            System.err.println("Error saving file: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+        if (!allowedExtensions.contains(extension)) {
+            throw new IllegalArgumentException("Invalid file extension: " + extension);
         }
+
+        return googleDriveService.uploadFile(file);
     }
 
-    // 파일 확장자 추출 메서드
-    private String getFileExtension(String filename) {
-        int lastDotIndex = filename.lastIndexOf('.');
-        if (lastDotIndex > 0) {
-            return filename.substring(lastDotIndex + 1);
-        }
-        return "";
-    }
-    // 이미지 삭제 메소드
-    public void deleteImage(String imageUrl) {
-        if (imageUrl != null && imageUrl.startsWith("/api/blog/images/")) {
-            String filename = imageUrl.substring("/api/blog/images/".length());
-            try {
-                Path imagePath = Paths.get(uploadDir).resolve(filename);
-                Files.deleteIfExists(imagePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public BlogDomain createBlog(BlogCreateDto blogCreateDto, String userId) throws IOException {
+    public BlogDomain createBlog(BlogCreateDto blogCreateDto, String userId) throws Exception {
         BlogDomain blogDomain = new BlogDomain();
 
         blogDomain.setUserId(userId);
@@ -111,40 +132,143 @@ public class BlogService {
         blogDomain.setBoardTitle(blogCreateDto.getBoardTitle());
         blogDomain.setBoardContents(blogCreateDto.getBoardContent());
         blogDomain.setCreateAt(LocalDateTime.now());
+        blogDomain.setUpdateAt(LocalDateTime.now());
         blogDomain.setTag(blogCreateDto.getTag());
         blogDomain.setIsPin(false);
         blogDomain.setIsSecure(0);
         blogDomain.setIsDelete(0);
 
         List<String> uploadedImageUrls = new ArrayList<>();
-        if (blogCreateDto.getImageFiles() != null && !blogCreateDto.getImageFiles().isEmpty()) {
-            for (MultipartFile file : blogCreateDto.getImageFiles()) {
-                try {
-                    String imageUrl = saveImage(file);
-                    uploadedImageUrls.add(imageUrl);
-                } catch (Exception e) {
-                    uploadedImageUrls.forEach(this::deleteImage);
-                    throw e;
+
+        try {
+            // 1️⃣ 업로드된 이미지 파일 처리 (saveImage 사용)
+            if (blogCreateDto.getImageFiles() != null) {
+                for (MultipartFile file : blogCreateDto.getImageFiles()) {
+                    uploadedImageUrls.add(saveImage(file));
                 }
             }
-        }
 
-        // HTML 컨텐츠에서 이미지 URL 추출
-        Pattern pattern = Pattern.compile("src=\"(/api/blog/images/[^\"]+)\"");
-        Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());
-        while (matcher.find()) {
-            String imageUrl = matcher.group(1);
-            if (!uploadedImageUrls.contains(imageUrl)) {
-                uploadedImageUrls.add(imageUrl);
+            // 2️⃣ 본문 HTML에 포함된 이미지 URL도 추출해서 저장
+            Pattern pattern = Pattern.compile("src=[\"']([^\"']+)[\"']");
+            Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());
+
+            while (matcher.find()) {
+                String imageUrl = matcher.group(1);
+                if (!uploadedImageUrls.contains(imageUrl)) {
+                    uploadedImageUrls.add(imageUrl);
+                }
             }
+
+        } catch (Exception e) {
+            // 업로드한 이미지 모두 삭제
+            uploadedImageUrls.forEach(this::deleteImage);
+            throw e;
         }
 
         blogDomain.setImage(uploadedImageUrls);
-        return blogRepository.save(blogDomain);
+        if (!uploadedImageUrls.isEmpty()) {
+            blogDomain.setThumbnailImage(uploadedImageUrls.get(0));
+        }
 
+        return blogRepository.save(blogDomain);
     }
 
-    public void updateBlog(BlogUpdateRequestDto blogUpdateRequestDto, String userId) throws IOException {
+
+    //    //구글버전
+//    public String saveImage(MultipartFile file) throws Exception {
+//        try {
+//            if (file.isEmpty()) throw new IllegalArgumentException("Empty file");
+//            if (file.getSize() > 20 * 1024 * 1024) throw new IllegalArgumentException("File size exceeds maximum limit");
+//
+//            String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+//            String extension = getFileExtension(originalFilename).toLowerCase();
+//            Set<String> allowedExtensions = new HashSet<>(Arrays.asList(
+//                    "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif", "tiff", "tif", "svg"
+//            ));
+//            if (!allowedExtensions.contains(extension)) {
+//                throw new IllegalArgumentException("Invalid file extension");
+//            }
+//
+//            // 👉 Google Drive 업로드로 대체
+//            return googleDriveService.uploadFile(file);
+//
+//        } catch (IOException e) {
+//            System.err.println("Error uploading file: " + e.getMessage());
+//            e.printStackTrace();
+//            throw e;
+//        }
+//    }
+//
+//    // 파일 확장자 추출 메서드
+//    private String getFileExtension(String filename) {
+//        int lastDotIndex = filename.lastIndexOf('.');
+//        if (lastDotIndex > 0) {
+//            return filename.substring(lastDotIndex + 1);
+//        }
+//        return "";
+//    }
+    //0624
+    public void deleteImage(String imageUrl) {
+        try {
+            googleDriveService.deleteFile(imageUrl);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // e.printStackTrace(); 대신
+            //log.error("이미지 삭제 중 오류 발생 - URL: {}", imageUrl, e);
+
+        }
+    }
+
+//    public BlogDomain createBlog(BlogCreateDto blogCreateDto, String userId) throws Exception {
+//        BlogDomain blogDomain = new BlogDomain();
+//
+//        blogDomain.setUserId(userId);
+//        blogDomain.setBoardCategory(blogCreateDto.getBoardCategory());
+//        blogDomain.setBoardTitle(blogCreateDto.getBoardTitle());
+//        blogDomain.setBoardContents(blogCreateDto.getBoardContent());
+//        blogDomain.setCreateAt(LocalDateTime.now());
+//        blogDomain.setUpdateAt(LocalDateTime.now());
+//        blogDomain.setTag(blogCreateDto.getTag());
+//        blogDomain.setIsPin(false);
+//        blogDomain.setIsSecure(0);
+//        blogDomain.setIsDelete(0);
+//
+//        List<String> uploadedImageUrls = new ArrayList<>();
+//        if (blogCreateDto.getImageFiles() != null && !blogCreateDto.getImageFiles().isEmpty()) {
+//            for (MultipartFile file : blogCreateDto.getImageFiles()) {
+//                try {
+//                    String imageUrl = saveImage(file);
+//                    uploadedImageUrls.add(imageUrl);
+//                } catch (Exception e) {
+//                    uploadedImageUrls.forEach(this::deleteImage);
+//                    throw e;
+//                }
+//            }
+//        }
+//
+//        // HTML 컨텐츠에서 이미지 URL 추출
+////        Pattern pattern = Pattern.compile("src=\"(/api/blog/images/[^"]+)\"");
+//        Pattern pattern = Pattern.compile("src=[\"']([^\"']+)[\"']");
+//        Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());
+//        while (matcher.find()) {
+//            String imageUrl = matcher.group(1);
+//            if (!uploadedImageUrls.contains(imageUrl)) {
+//                uploadedImageUrls.add(imageUrl);
+//            }
+//        }
+//
+//        blogDomain.setImage(uploadedImageUrls);
+//        return blogRepository.save(blogDomain);
+//
+//    }
+
+
+
+
+
+
+
+    public void updateBlog(BlogUpdateRequestDto blogUpdateRequestDto, String userId) throws Exception {
         BlogDomain blog = blogRepository.findById(blogUpdateRequestDto.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Blog not found"));
 
@@ -185,7 +309,7 @@ public class BlogService {
         }
 
         blog.setImage(updatedImageUrls);
-        blog.setCreateAt(LocalDateTime.now());
+        blog.setUpdateAt(LocalDateTime.now());
         blogRepository.save(blog);
     }
 
@@ -288,6 +412,7 @@ public class BlogService {
         blogDetailResponseDto.setBoardContents(blog.getBoardContents());
         blogDetailResponseDto.setNickname(nickname);
         blogDetailResponseDto.setCreateAt(blog.getCreateAt());
+        blogDetailResponseDto.setUpdateAt(blog.getUpdateAt());
         blogDetailResponseDto.setTag(blog.getTag());
         blogDetailResponseDto.setImage(blog.getImage());
         blogDetailResponseDto.setThumbnailImage(blog.getThumbnailImage());
@@ -335,4 +460,13 @@ public class BlogService {
     public List<String> getAllTags() {
         return blogRepository.findAllTags();
     }
+
+    //구글 코드
+    public List<String> getImageUrlsByBlogId(String blogId) {
+        return blogRepository.findById(blogId)
+                .map(BlogDomain::getImage)
+                .orElse(Collections.emptyList());
+    }
+
+
 }

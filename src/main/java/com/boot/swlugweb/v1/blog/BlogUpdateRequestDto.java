@@ -19,4 +19,5 @@ public class BlogUpdateRequestDto {
     private String thumbnailImage;
     private List<String> imageUrls;
     private List<MultipartFile> imageFiles;
+    private LocalDateTime updateAt;
 }

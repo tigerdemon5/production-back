@@ -38,6 +38,10 @@ public class BlogDomain {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") // JSON 직렬화 시 포맷 지정
     private LocalDateTime createAt;
 
+    @Field("updated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime updateAt;
+
     @Field("tag")
     private List<String> tag;
 

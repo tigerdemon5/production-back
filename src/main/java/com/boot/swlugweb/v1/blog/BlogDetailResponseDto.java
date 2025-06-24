@@ -14,6 +14,7 @@ public class BlogDetailResponseDto {
     private String boardTitle;
     private String boardContents;
     private LocalDateTime createAt;
+    private LocalDateTime updateAt;
     private String userId;
     private String nickname;
     private List<String> tag;
