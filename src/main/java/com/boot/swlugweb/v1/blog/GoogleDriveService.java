@@ -6,214 +6,176 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-
+import com.google.api.client.googleapis.media.MediaHttpUploader;
+import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.FileList;
-
+import com.google.api.services.drive.model.Permission;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.UUID;
 
+import static com.google.api.client.googleapis.media.MediaHttpUploader.UploadState.INITIATION_STARTED;
 
 @Service
 public class GoogleDriveService {
-
-//    private static final String APPLICATION_NAME = "Spring Boot Google Drive";
-//    private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-//    private static final List<String> SCOPES = Collections.singletonList(DriveScopes.DRIVE);
-//    private static final String TOKENS_DIRECTORY_PATH = "tokens";
-//    //    private static final String CREDENTIALS_FILE_PATH = "/credentials_service.json";
-//    private static final String CREDENTIALS_FILE_PATH = "/service_account_key.json";
-////    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
-//
-//    //credential-service
-//    public Drive getDriveService() throws Exception {
-//        InputStream in = getClass().getResourceAsStream(CREDENTIALS_FILE_PATH);
-//        if (in == null) {
-//            throw new RuntimeException("credentials_service.json not found");
-//        }
-//
-//        GoogleCredentials credentials = ServiceAccountCredentials.fromStream(in)
-//                .createScoped(Collections.singletonList("drive-uploader@swlugweb1.iam.gserviceaccount.com/auth/drive"));
-//
-//        return new Drive.Builder(
-//                GoogleNetHttpTransport.newTrustedTransport(),
-//                JSON_FACTORY,
-//                new HttpCredentialsAdapter(credentials)
-//        ).setApplicationName(APPLICATION_NAME).build();
-//    }}
-
-//test 0621
-//    private static final String APPLICATION_NAME = "Spring Boot Google Drive";
-//    private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-//    private static final List<String> SCOPES = Collections.singletonList(DriveScopes.DRIVE);
-
-    //service 버전
-    //    private static final String CREDENTIALS_FILE_PATH = "/service_account_key.json";
-//
-//    public Drive getDriveService() throws Exception {
-//        InputStream in = getClass().getResourceAsStream(CREDENTIALS_FILE_PATH);
-//        if (in == null) {
-//            throw new RuntimeException("service_account_key.json not found");
-//        }
-//
-//        GoogleCredentials credentials = ServiceAccountCredentials.fromStream(in)
-//                .createScoped(SCOPES);
-//
-//        return new Drive.Builder(
-//                GoogleNetHttpTransport.newTrustedTransport(),
-//                JSON_FACTORY,
-//                new HttpCredentialsAdapter(credentials)
-//        ).setApplicationName(APPLICATION_NAME).build();
-//    }
-
-//test0624
-private static final String APPLICATION_NAME = "Google Drive API Java Quickstart";
+    private static final String APPLICATION_NAME = "Google Drive API Java Quickstart";
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
-    private static final List<String> SCOPES = Collections.singletonList(DriveScopes.DRIVE_FILE);
-    private static final String CREDENTIALS_FILE_PATH = "credentials1.json";
+    private static final List<String> SCOPES = Collections.singletonList(DriveScopes.DRIVE);
+    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
 
 
-//    public static String uploadFile(MultipartFile file) throws IOException, GeneralSecurityException {
-//        NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-//        Drive service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-//                .setApplicationName(APPLICATION_NAME)
-//                .build();
-//
-//        getFileList(service);
-//        return null;
-//    }
+    private final Drive driveService;
 
-    public static String uploadFile(MultipartFile file) throws IOException, GeneralSecurityException {
-        NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        Drive driveService = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-
-        com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
-        fileMetadata.setName(file.getOriginalFilename());
-
-        InputStream inputStream = file.getInputStream();
-        InputStreamContent mediaContent = new InputStreamContent(
-                file.getContentType(), inputStream
-        );
-
-        com.google.api.services.drive.model.File uploadedFile = driveService.files().create(fileMetadata, mediaContent)
-                .setFields("id")
-                .execute();
-
-        String fileId = uploadedFile.getId();
-        return "https://drive.google.com/file/d/" + fileId + "/view?usp=sharing";
+    public GoogleDriveService() throws GeneralSecurityException, IOException {
+        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+        this.driveService = new Drive.Builder(
+                HTTP_TRANSPORT,
+                JSON_FACTORY,
+                getCredentials(HTTP_TRANSPORT)
+        ).setApplicationName(APPLICATION_NAME).build();
     }
-
-
-//    public static void getFileList(Drive driveService) throws IOException {
-//        FileList result = driveService.files().list().setFields("nextPageToken, files(id, name, createdTime)").execute();
-//        List<com.google.api.services.drive.model.File> files = result.getFiles();
-//        for (com.google.api.services.drive.model.File file : files) {
-//            System.out.println("File Name: " + file.getName() + " File Id: " + file.getId());
-//        }
-//    }
-
-//    public static void deleteFile(String imageUrl) throws IOException, GeneralSecurityException {
-//
-//        NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-//        Drive service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-//                .setApplicationName(APPLICATION_NAME)
-//                .build();
-//
-//        service.files().delete(imageUrl).execute();
-//        System.out.println("File with ID " + imageUrl + " has been deleted.");
-//    }
-//0624
-    public void deleteFile(String imageUrl) throws IOException, GeneralSecurityException {
-        String fileId = extractFileIdFromUrl(imageUrl); // fileId 추출
-        if (fileId == null) {
-            throw new IllegalArgumentException("Invalid Google Drive URL: " + imageUrl);
-        }
-
-        NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        Drive service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-
-        service.files().delete(fileId).execute(); // ✅ 여기 수정
-        System.out.println("File with ID " + fileId + " has been deleted.");
-    }
-
-    public static String extractFileIdFromUrl(String imageUrl) {
-        Pattern pattern = Pattern.compile("/d/([a-zA-Z0-9_-]{25,})");
-        Matcher matcher = pattern.matcher(imageUrl);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return null;
-    }
-//0624
-
-//        public static String extractFileIdFromUrl(String imageurl) {
-//        if (imageurl.contains("drive.google.com/file/d/")) {
-//            int start = imageurl.indexOf("/d/") + 3;
-//            int end = imageurl.indexOf("/", start);
-//            if (start > 2 && end > start) {
-//                return imageurl.substring(start, end);
-//            }
-//        }
-//        return null;
-//    }
-
-//    public void deleteFile(String imageUrl) throws IOException, GeneralSecurityException {
-//        String fileId = extractFileIdFromUrl(imageUrl);
-//
-//        NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-//        com.google.api.services.drive.model.Drive service = new com.google.api.services.drive.model.Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-//                .setApplicationName(APPLICATION_NAME)
-//                .build();
-//
-//        service.files().delete(fileId).execute();
-//        System.out.println("File with ID " + fileId + " has been deleted.");
-//    }
-//
-//    public String extractFileIdFromUrl(String url) {
-//        String regex = "/d/([a-zA-Z0-9_-]{25,})";
-//        Pattern pattern = Pattern.compile(regex);
-//        org.apache.tomcat.util.file.Matcher matcher = pattern.matcher(url);
-//        if (matcher.find()) {
-//            return matcher.group(1);
-//        }
-//        throw new IllegalArgumentException("Invalid Google Drive URL: " + url);
-//    }
 
 
     private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
         InputStream in = GoogleDriveService.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
+        if (in == null) {
+            throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
+        }
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
                 .setAccessType("offline")
                 .build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8080).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-    }}
-//0624
+    }
+
+    public String uploadFile(MultipartFile file) throws IOException {
+        java.io.File convFile = new java.io.File(System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename());
+        file.transferTo(convFile);
+
+        com.google.api.services.drive.model.File fileMetaData = new com.google.api.services.drive.model.File();
+        String randomFileName = UUID.randomUUID().toString() + ".jpg";
+        fileMetaData.setName(randomFileName);
+
+        FileContent fileContent = new FileContent("image/jpeg", convFile);
+        com.google.api.services.drive.model.File uploadedFile = driveService.files().create(fileMetaData, fileContent).execute();
+
+        return "https://drive.google.com/uc?id=" + uploadedFile.getId();
+    }
 
 
 
+
+
+
+
+    private Path saveTempFile(MultipartFile multipartFile) throws IOException {
+        Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
+        Path tempFile = tempDir.resolve(multipartFile.getOriginalFilename());
+        try (FileOutputStream fos = new FileOutputStream(tempFile.toFile())) {
+            fos.write(multipartFile.getBytes());
+        }
+        return tempFile;
+    }
+
+
+    public void deleteFile(String fileId) throws IOException, GeneralSecurityException {
+        Drive service = driveService;
+        service.files().delete(fileId).execute();
+    }
+
+
+
+
+    private java.io.File convertMultipartFileToFile(MultipartFile file) throws IOException {
+        java.io.File convFile = new java.io.File(file.getOriginalFilename());
+        try (FileOutputStream fos = new FileOutputStream(convFile)) {
+            fos.write(file.getBytes());
+        }
+        return convFile;
+    }
+
+
+    public String uploadFileToDrive(MultipartFile file) throws IOException {
+        // Google Drive에 업로드할 파일 메타데이터 설정
+        com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
+        fileMetadata.setName(file.getOriginalFilename());
+
+        // 업로드할 파일 내용 설정
+        InputStreamContent mediaContent = new InputStreamContent(
+                "application/octet-stream", file.getInputStream()
+        );
+
+        // 파일을 구글 드라이브에 업로드
+        Drive.Files.Create createRequest = driveService.files().create(fileMetadata, mediaContent);
+
+        // 업로드 진행 상태를 모니터링
+        createRequest.getMediaHttpUploader().setProgressListener(
+                new MediaHttpUploaderProgressListener() {
+                    public void progressChanged(MediaHttpUploader uploader) throws IOException {
+                        switch (uploader.getUploadState()) {
+                            case INITIATION_STARTED:
+                                System.out.println("Initiation Started");
+                                break;
+                            case INITIATION_COMPLETE:
+                                System.out.println("Initiation Complete");
+                                break;
+                            case MEDIA_IN_PROGRESS:
+                                System.out.println("Upload In Progress");
+                                break;
+                            case MEDIA_COMPLETE:
+                                System.out.println("Upload Complete");
+                                break;
+                        }
+                    }
+                }
+        );
+
+        // 파일 업로드 실행
+        com.google.api.services.drive.model.File uploadedFile = createRequest.execute();
+        String fileId = uploadedFile.getId();
+
+        // 파일 공개 권한 설정 (필수)
+        setFilePublic(fileId);
+
+        // 이미지 원본 URL 반환
+        return driveService.files().get(fileId).execute().getWebViewLink();
+
+        // 업로드된 파일의 ID를 반환 (WebViewLink로 파일을 찾을 수 있음)
+        //return "https://drive.google.com/file/d/" + uploadedFile.getId() + "/view";
+    }
+
+    // 파일을 "공개"로 설정하는 메서드 수정
+    private void setFilePublic(String fileId) throws IOException {
+        Permission permission = new Permission()
+                .setType("anyone")  // 모든 사용자 접근 허용
+                .setRole("reader")  // 읽기 권한 부여
+                .setAllowFileDiscovery(false); // 검색 엔진에서 노출되지 않도록 설정
+
+        driveService.permissions().create(fileId, permission)
+                .setFields("id")
+                .execute();
+
+        System.out.println("File is now public: " + fileId);
+    }
+
+
+}
 

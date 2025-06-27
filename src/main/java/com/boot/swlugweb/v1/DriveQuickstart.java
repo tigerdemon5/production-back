@@ -42,8 +42,8 @@ public class DriveQuickstart {
      * If modifying these scopes, delete your previously saved tokens/ folder.
      */
     private static final List<String> SCOPES =
-            Collections.singletonList(DriveScopes.DRIVE_METADATA_READONLY);
-    private static final String CREDENTIALS_FILE_PATH = "credentials1.json";
+            Collections.singletonList(DriveScopes.DRIVE);
+    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
     /**
      * Creates an authorized Credential object.
@@ -96,4 +96,6 @@ public class DriveQuickstart {
             }
         }
     }
+
+
 }

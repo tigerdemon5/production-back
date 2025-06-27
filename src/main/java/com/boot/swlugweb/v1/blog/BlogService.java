@@ -121,7 +121,7 @@ public class BlogService {
             throw new IllegalArgumentException("Invalid file extension: " + extension);
         }
 
-        return googleDriveService.uploadFile(file);
+        return googleDriveService.uploadFileToDrive(file);
     }
 
     public BlogDomain createBlog(BlogCreateDto blogCreateDto, String userId) throws Exception {

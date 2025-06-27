@@ -53,41 +53,7 @@ public class BlogController {
         return ResponseEntity.ok(blog);
     }
 
-//구글 버전
-//    @PostMapping(value = "/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<?> saveBlog(
-//            @RequestPart("blogCreateDto") BlogCreateDto blogCreateDto,
-//            @RequestPart(name = "imageFiles", required = false) List<MultipartFile> imageFiles,
-//            HttpSession session) {
-//
-//        String userId = (String) session.getAttribute("USER");
-//        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-//
-//        try {
-//            List<String> imageUrls = new ArrayList<>();
-//
-//            if (imageFiles != null && !imageFiles.isEmpty()) {
-//                for (MultipartFile file : imageFiles) {
-//                    String url = googleDriveService.uploadFile(file);
-//                    imageUrls.add(url);
-//                }
-//            }
-//
-//            blogCreateDto.setImageUrl(imageUrls);
-//            blogCreateDto.setImageFiles(imageFiles);
-//            blogService.createBlog(blogCreateDto, userId);
-//
-//            return ResponseEntity.status(HttpStatus.FOUND)
-//                    .header(HttpHeaders.LOCATION, "/api/blog")
-//                    .build();
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//        }
-//    }
-
-    //test1 0621
+    //구글 버전
     @PostMapping(value = "/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> saveBlog(
             @RequestPart("blogCreateDto") BlogCreateDto blogCreateDto,
@@ -119,36 +85,36 @@ public class BlogController {
 
 
     //구글 버전
-    @PostMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> updateBlogPost(
-            @RequestPart("blogUpdateRequestDto") BlogUpdateRequestDto blogUpdateRequestDto,
-            @RequestPart(name = "imageFiles", required = false) List<MultipartFile> imageFiles,
-            HttpSession session) {
-
-        String userId = (String) session.getAttribute("USER");
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-        try {
-            List<String> imageUrls = new ArrayList<>();
-            if (imageFiles != null && !imageFiles.isEmpty()) {
-                for (MultipartFile file : imageFiles) {
-                    String url = GoogleDriveService.uploadFile(file);
-                    imageUrls.add(url);
-                }
-            }
-
-            blogUpdateRequestDto.setImageUrls(imageUrls);
-            blogUpdateRequestDto.setImageFiles(imageFiles);
-            blogService.updateBlog(blogUpdateRequestDto, userId);
-
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header(HttpHeaders.LOCATION, "/api/blog")
-                    .build();
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+//    @PostMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<String> updateBlogPost(
+//            @RequestPart("blogUpdateRequestDto") BlogUpdateRequestDto blogUpdateRequestDto,
+//            @RequestPart(name = "imageFiles", required = false) List<MultipartFile> imageFiles,
+//            HttpSession session) {
+//
+//        String userId = (String) session.getAttribute("USER");
+//        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//
+//        try {
+//            List<String> imageUrls = new ArrayList<>();
+//            if (imageFiles != null && !imageFiles.isEmpty()) {
+//                for (MultipartFile file : imageFiles) {
+//                    String url = GoogleDriveService.uploadFileToDrive(file);
+//                    imageUrls.add(url);
+//                }
+//            }
+//
+//            blogUpdateRequestDto.setImageUrls(imageUrls);
+//            blogUpdateRequestDto.setImageFiles(imageFiles);
+//            blogService.updateBlog(blogUpdateRequestDto, userId);
+//
+//            return ResponseEntity.status(HttpStatus.FOUND)
+//                    .header(HttpHeaders.LOCATION, "/api/blog")
+//                    .build();
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
 
 
     @PostMapping("/delete")
