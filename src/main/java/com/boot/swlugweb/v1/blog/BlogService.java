@@ -166,12 +166,57 @@ public class BlogService {
         }
 
         blogDomain.setImage(uploadedImageUrls);
-        if (!uploadedImageUrls.isEmpty()) {
-            blogDomain.setThumbnailImage(uploadedImageUrls.get(0));
-        }
+//        if (!uploadedImageUrls.isEmpty()) {
+//            blogDomain.setThumbnailImage(uploadedImageUrls.get(0));
+//        }
+
+
 
         return blogRepository.save(blogDomain);
     }
+
+//원본
+//    public BlogDomain createBlog(BlogCreateDto blogCreateDto, String userId) throws Exception {
+//        BlogDomain blogDomain = new BlogDomain();
+//
+//        blogDomain.setUserId(userId);
+//        blogDomain.setBoardCategory(blogCreateDto.getBoardCategory());
+//        blogDomain.setBoardTitle(blogCreateDto.getBoardTitle());
+//        blogDomain.setBoardContents(blogCreateDto.getBoardContent());
+//        blogDomain.setCreateAt(LocalDateTime.now());
+//        blogDomain.setTag(blogCreateDto.getTag());
+//        blogDomain.setIsPin(false);
+//        blogDomain.setIsSecure(0);
+//        blogDomain.setIsDelete(0);
+//
+//        List<String> uploadedImageUrls = new ArrayList<>();
+//        if (blogCreateDto.getImageFiles() != null && !blogCreateDto.getImageFiles().isEmpty()) {
+//            for (MultipartFile file : blogCreateDto.getImageFiles()) {
+//                try {
+//                    String imageUrl = saveImage(file);
+//                    uploadedImageUrls.add(imageUrl);
+//                } catch (Exception e) {
+//                    uploadedImageUrls.forEach(this::deleteImage);
+//                    throw e;
+//                }
+//            }
+//        }
+//
+//        // HTML 컨텐츠에서 이미지 URL 추출
+//        Pattern pattern = Pattern.compile("src=\"(/api/blog/images/[^\"]+)\"");
+//        Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());
+//        while (matcher.find()) {
+//            String imageUrl = matcher.group(1);
+//            if (!uploadedImageUrls.contains(imageUrl)) {
+//                uploadedImageUrls.add(imageUrl);
+//            }
+//        }
+//
+//        blogDomain.setImage(uploadedImageUrls);
+//        return blogRepository.save(blogDomain);
+//
+//    }
+
 
 
     //    //구글버전
@@ -263,55 +308,93 @@ public class BlogService {
 //    }
 
 
+//ㅅㄷㄴㅅ
 
-
-
-
-
-    public void updateBlog(BlogUpdateRequestDto blogUpdateRequestDto, String userId) throws Exception {
-        BlogDomain blog = blogRepository.findById(blogUpdateRequestDto.getId())
+    public void updateBlog(BlogUpdateRequestDto dto, String userId) throws Exception {
+        BlogDomain blog = blogRepository.findById(dto.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Blog not found"));
 
         if (!blog.getUserId().equals(userId)) {
             throw new SecurityException("Not authorized");
         }
 
-        if (blogUpdateRequestDto.getBoardTitle() != null) {
-            blog.setBoardTitle(blogUpdateRequestDto.getBoardTitle());
-        }
-        if (blogUpdateRequestDto.getBoardContent() != null) {
-            blog.setBoardContents(blogUpdateRequestDto.getBoardContent());
-        }
-        if (blogUpdateRequestDto.getTag() != null) {
-            blog.setTag(blogUpdateRequestDto.getTag());
-        }
+        // 제목, 내용, 태그 수정
+        if (dto.getBoardTitle() != null) blog.setBoardTitle(dto.getBoardTitle());
+        if (dto.getBoardContent() != null) blog.setBoardContents(dto.getBoardContent());
+        if (dto.getTag() != null) blog.setTag(dto.getTag());
 
+        // 기존 이미지 목록
         List<String> currentImageUrls = blog.getImage() != null ? new ArrayList<>(blog.getImage()) : new ArrayList<>();
-        List<String> updatedImageUrls = blogUpdateRequestDto.getImageUrls() != null ?
-                blogUpdateRequestDto.getImageUrls() : new ArrayList<>();
+        List<String> updatedImageUrls = dto.getImageUrls() != null ? new ArrayList<>(dto.getImageUrls()) : new ArrayList<>();
 
+        // 삭제 대상 이미지 추출 (기존에 있었지만 dto.getImageUrls()에 없는 것들)
         List<String> imagesToDelete = new ArrayList<>(currentImageUrls);
         imagesToDelete.removeAll(updatedImageUrls);
+
         for (String imageUrl : imagesToDelete) {
-            deleteImage(imageUrl);
+            deleteImage(imageUrl); // imageUrl에서 fileId 추출 → Google Drive에서 삭제
         }
 
-        if (blogUpdateRequestDto.getImageFiles() != null) {
-            for (MultipartFile file : blogUpdateRequestDto.getImageFiles()) {
-                try {
-                    String imageUrl = saveImage(file);
-                    updatedImageUrls.add(imageUrl);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
-                }
-            }
+    // 새로 추가할 이미지 업로드
+    if (dto.getImageFiles() != null) {
+        for (MultipartFile file : dto.getImageFiles()) {
+            String imageUrl = saveImage(file); // Google Drive에 업로드 후 URL 반환
+            updatedImageUrls.add(imageUrl);
         }
-
-        blog.setImage(updatedImageUrls);
-        blog.setUpdateAt(LocalDateTime.now());
-        blogRepository.save(blog);
     }
+
+    blog.setImage(updatedImageUrls);
+    blog.setUpdateAt(LocalDateTime.now());
+    blogRepository.save(blog);
+}
+//ㅅㄷㄴㅅ
+
+
+//
+//    public void updateBlog(BlogUpdateRequestDto blogUpdateRequestDto, String userId) throws Exception {
+//        BlogDomain blog = blogRepository.findById(blogUpdateRequestDto.getId())
+//                .orElseThrow(() -> new IllegalArgumentException("Blog not found"));
+//
+//        if (!blog.getUserId().equals(userId)) {
+//            throw new SecurityException("Not authorized");
+//        }
+//
+//        if (blogUpdateRequestDto.getBoardTitle() != null) {
+//            blog.setBoardTitle(blogUpdateRequestDto.getBoardTitle());
+//        }
+//        if (blogUpdateRequestDto.getBoardContent() != null) {
+//            blog.setBoardContents(blogUpdateRequestDto.getBoardContent());
+//        }
+//        if (blogUpdateRequestDto.getTag() != null) {
+//            blog.setTag(blogUpdateRequestDto.getTag());
+//        }
+//
+//        List<String> currentImageUrls = blog.getImage() != null ? new ArrayList<>(blog.getImage()) : new ArrayList<>();
+//        List<String> updatedImageUrls = blogUpdateRequestDto.getImageUrls() != null ?
+//                blogUpdateRequestDto.getImageUrls() : new ArrayList<>();
+//
+//        List<String> imagesToDelete = new ArrayList<>(currentImageUrls);
+//        imagesToDelete.removeAll(updatedImageUrls);
+//        for (String imageUrl : imagesToDelete) {
+//            deleteImage(imageUrl);
+//        }
+//
+//        if (blogUpdateRequestDto.getImageFiles() != null) {
+//            for (MultipartFile file : blogUpdateRequestDto.getImageFiles()) {
+//                try {
+//                    String imageUrl = saveImage(file);
+//                    updatedImageUrls.add(imageUrl);
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    throw e;
+//                }
+//            }
+//        }
+//
+//        blog.setImage(updatedImageUrls);
+//        blog.setUpdateAt(LocalDateTime.now());
+//        blogRepository.save(blog);
+//    }
 
     public void deleteBlog(BlogDeleteRequestDto blogDeleteRequestDto, String userId) {
         BlogDomain blog = blogRepository.findById(blogDeleteRequestDto.getId())

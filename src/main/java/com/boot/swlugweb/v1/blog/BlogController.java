@@ -116,6 +116,33 @@ public class BlogController {
 //        }
 //    }
 
+    @PostMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateBlogPost(
+            @RequestPart("blogUpdateRequestDto") BlogUpdateRequestDto blogUpdateRequestDto,
+            @RequestPart(name = "imageFiles", required = false) List<MultipartFile> imageFiles,
+            HttpSession session) {
+
+        String userId = (String) session.getAttribute("USER");
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            // 새로 업로드할 파일만 세팅 (기존 imageUrls는 DTO에서 받아옴)
+            blogUpdateRequestDto.setImageFiles(imageFiles);
+
+            blogService.updateBlog(blogUpdateRequestDto, userId);
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.LOCATION, "/api/blog")
+                    .build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
+
 
     @PostMapping("/delete")
     public ResponseEntity<String> deleteBlog(
