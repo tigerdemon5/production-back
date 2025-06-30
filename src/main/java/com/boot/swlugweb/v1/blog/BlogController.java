@@ -116,6 +116,32 @@ public class BlogController {
 //        }
 //    }
 
+//    @PostMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<?> updateBlogPost(
+//            @RequestPart("blogUpdateRequestDto") BlogUpdateRequestDto blogUpdateRequestDto,
+//            @RequestPart(name = "imageFiles", required = false) List<MultipartFile> imageFiles,
+//            HttpSession session) {
+//
+//        String userId = (String) session.getAttribute("USER");
+//        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+//
+//        try {
+//            // 새로 업로드할 파일만 세팅 (기존 imageUrls는 DTO에서 받아옴)
+//            blogUpdateRequestDto.setImageFiles(imageFiles);
+//
+//            blogService.updateBlog(blogUpdateRequestDto, userId);
+//
+//            return ResponseEntity.status(HttpStatus.FOUND)
+//                    .header(HttpHeaders.LOCATION, "/api/blog")
+//                    .build();
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
+
+    //0630 test
     @PostMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateBlogPost(
             @RequestPart("blogUpdateRequestDto") BlogUpdateRequestDto blogUpdateRequestDto,
@@ -123,12 +149,13 @@ public class BlogController {
             HttpSession session) {
 
         String userId = (String) session.getAttribute("USER");
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
         try {
-            // 새로 업로드할 파일만 세팅 (기존 imageUrls는 DTO에서 받아옴)
+            // 새 이미지 파일들을 DTO에 주입
             blogUpdateRequestDto.setImageFiles(imageFiles);
-
             blogService.updateBlog(blogUpdateRequestDto, userId);
 
             return ResponseEntity.status(HttpStatus.FOUND)
@@ -140,6 +167,9 @@ public class BlogController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+
+    //test0630
 
 
 
@@ -170,7 +200,7 @@ public class BlogController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-//
+
 //    // ✅ URL에서 fileId 추출
 //    public String extractFileIdFromUrl(String url) {
 //        if (url.contains("drive.google.com/file/d/")) {

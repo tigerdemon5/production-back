@@ -31,7 +31,7 @@ public class BlogDto {
     private String thumbnailImage; // 필드는 유지
 
     public String getThumbnailUrl() {
-        if (image != null && !image.isEmpty()) {
+        if (image != null && !image.isEmpty() && image.get(0) != null) {
             String firstImage = image.get(0);
             return firstImage.startsWith("/api/blog/images/")
                     ? firstImage

@@ -44,6 +44,7 @@ public class GoogleDriveService {
     //서비스 코드
     private static final String APPLICATION_NAME = "Google Drive API Java with Service Account";
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
+    private static final List<String> SCOPES = Collections.singletonList(DriveScopes.DRIVE_FILE);
     private static final String SERVICE_ACCOUNT_KEY_PATH = "/service_account_key.json";
     //
 
@@ -139,6 +140,11 @@ public class GoogleDriveService {
 
         System.out.println("🌍 File is now public: " + fileId);
     }
+
+
+
+
+
 
 
 
