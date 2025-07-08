@@ -111,6 +111,7 @@ desktop.ini
 # Environment files
 application.properties
 credentials.json
+service_account_key.json
 
 #프론트
 templeates/
