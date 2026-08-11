@@ -94,6 +94,9 @@ public class SecurityConfig {
 
                         // 에러 페이지 접근 권한
                         .requestMatchers("/error").permitAll()
+
+                        //이미지 업로드
+                        .requestMatchers("/api/upload").permitAll()
                 )
 
                 // 커스텀 인증 필터 추가

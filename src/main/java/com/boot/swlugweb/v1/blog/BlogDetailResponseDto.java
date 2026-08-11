@@ -17,6 +17,6 @@ public class BlogDetailResponseDto {
     private String userId;
     private String nickname;
     private List<String> tag;
-    private List<String> image;
+    private List<String> imageUrl;
     private String thumbnailImage;
 }

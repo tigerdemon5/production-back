@@ -152,33 +152,33 @@ public class BlogController {
         }
     }
 
-    // 이미지 조회 엔드포인트
-    @GetMapping("/images/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
-        try {
-            Path imagePath = Paths.get(uploadDir).resolve(filename);
-            Resource resource = new UrlResource(imagePath.toUri());
-
-            if (resource.exists() && resource.isReadable()) {
-                String contentType = Files.probeContentType(imagePath);
-                if (contentType == null) {
-                    contentType = "application/octet-stream";
-                }
-
-                // 캐시 설정 추가
-                CacheControl cacheControl = CacheControl.maxAge(365, TimeUnit.DAYS);
-
-                return ResponseEntity.ok()
-                        .cacheControl(cacheControl)
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .header("Content-Disposition", "inline; filename=\"" + filename + "\"")
-                        .body(resource);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+//    // 이미지 조회 엔드포인트
+//    @GetMapping("/images/{filename:.+}")
+//    @ResponseBody
+//    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
+//        try {
+//            Path imagePath = Paths.get(uploadDir).resolve(filename);
+//            Resource resource = new UrlResource(imagePath.toUri());
+//
+//            if (resource.exists() && resource.isReadable()) {
+//                String contentType = Files.probeContentType(imagePath);
+//                if (contentType == null) {
+//                    contentType = "application/octet-stream";
+//                }
+//
+//                // 캐시 설정 추가
+//                CacheControl cacheControl = CacheControl.maxAge(365, TimeUnit.DAYS);
+//
+//                return ResponseEntity.ok()
+//                        .cacheControl(cacheControl)
+//                        .contentType(MediaType.parseMediaType(contentType))
+//                        .header("Content-Disposition", "inline; filename=\"" + filename + "\"")
+//                        .body(resource);
+//            } else {
+//                return ResponseEntity.notFound().build();
+//            }
+//        } catch (IOException e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
 }

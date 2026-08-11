@@ -1,5 +1,7 @@
 package com.boot.swlugweb.v1.blog;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.boot.swlugweb.v1.image.ImageService;
 import com.boot.swlugweb.v1.mypage.MyPageRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -8,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,15 +31,16 @@ public class BlogService {
 
     private final BlogRepository blogRepository;
     private final MyPageRepository myPageRepository;
+    private final ImageService imageService;
 
-    public BlogService(BlogRepository blogRepository, MyPageRepository myPageRepository) {
+    public BlogService(BlogRepository blogRepository, MyPageRepository myPageRepository, ImageService imageService) {
         this.blogRepository = blogRepository;
         this.myPageRepository = myPageRepository;
+        this.imageService = imageService;
     }
 
     // BlogService.java
     public String saveImage(MultipartFile file) throws IOException {
-        try {
             // 파일 유효성 검사
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Empty file");
@@ -58,28 +62,39 @@ public class BlogService {
                 throw new IllegalArgumentException("Invalid file extension");
             }
 
-            // 고유한 파일명 생성
-            String newFilename = UUID.randomUUID().toString() + "." + extension;
-            Path uploadPath = Paths.get(uploadDir);
-
-            // 업로드 디렉토리가 없으면 생성
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-                System.out.println("Created upload directory: " + uploadPath.toAbsolutePath());
-            }
+//            // 고유한 파일명 생성
+//            String newFilename = UUID.randomUUID().toString() + "." + extension;
+//            Path uploadPath = Paths.get(uploadDir);
+//
+//            // 업로드 디렉토리가 없으면 생성
+//            if (!Files.exists(uploadPath)) {
+//                Files.createDirectories(uploadPath);
+//                System.out.println("Created upload directory: " + uploadPath.toAbsolutePath());
+//            }
 
             // 파일 저장
-            Path destinationFile = uploadPath.resolve(newFilename);
-            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("File saved at: " + destinationFile.toAbsolutePath());
+//            Path destinationFile = uploadPath.resolve(newFilename);
+//            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
+//            System.out.println("File saved at: " + destinationFile.toAbsolutePath());
+//
+//            // 접근 가능한 URL 반환
+//            return "/api/blog/images/" + newFilename;
+        String contentType = file.getContentType();
 
-            // 접근 가능한 URL 반환
-            return "/api/blog/images/" + newFilename;
-        } catch (IOException e) {
-            System.err.println("Error saving file: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+        Set<String> allowedTypes = Set.of(
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "image/svg+xml",
+                "image/bmp",
+                "image/tiff"
+        );
+
+        if (contentType == null || !allowedTypes.contains(contentType)) {
+            throw new IllegalArgumentException("Invalid image type");
         }
+        return imageService.upload(file);
     }
 
     // 파일 확장자 추출 메서드
@@ -91,17 +106,17 @@ public class BlogService {
         return "";
     }
     // 이미지 삭제 메소드
-    public void deleteImage(String imageUrl) {
-        if (imageUrl != null && imageUrl.startsWith("/api/blog/images/")) {
-            String filename = imageUrl.substring("/api/blog/images/".length());
-            try {
-                Path imagePath = Paths.get(uploadDir).resolve(filename);
-                Files.deleteIfExists(imagePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//    public void deleteImage(String imageUrl) {
+//        if (imageUrl != null && imageUrl.startsWith("/api/blog/images/")) {
+//            String filename = imageUrl.substring("/api/blog/images/".length());
+//            try {
+//                Path imagePath = Paths.get(uploadDir).resolve(filename);
+//                Files.deleteIfExists(imagePath);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 
     public BlogDomain createBlog(BlogCreateDto blogCreateDto, String userId) throws IOException {
         BlogDomain blogDomain = new BlogDomain();
@@ -118,28 +133,26 @@ public class BlogService {
 
         List<String> uploadedImageUrls = new ArrayList<>();
         if (blogCreateDto.getImageFiles() != null && !blogCreateDto.getImageFiles().isEmpty()) {
-            for (MultipartFile file : blogCreateDto.getImageFiles()) {
-                try {
-                    String imageUrl = saveImage(file);
-                    uploadedImageUrls.add(imageUrl);
-                } catch (Exception e) {
-                    uploadedImageUrls.forEach(this::deleteImage);
-                    throw e;
-                }
-            }
-        }
+            for(MultipartFile file : blogCreateDto.getImageFiles()){
 
-        // HTML 컨텐츠에서 이미지 URL 추출
-        Pattern pattern = Pattern.compile("src=\"(/api/blog/images/[^\"]+)\"");
-        Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());
-        while (matcher.find()) {
-            String imageUrl = matcher.group(1);
-            if (!uploadedImageUrls.contains(imageUrl)) {
+                String imageUrl = saveImage(file);
+
                 uploadedImageUrls.add(imageUrl);
             }
         }
 
+//        // HTML 컨텐츠에서 이미지 URL 추출
+//        Pattern pattern = Pattern.compile("src=\"(/api/blog/images/[^\"]+)\"");
+//        Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());
+//        while (matcher.find()) {
+//            String imageUrl = matcher.group(1);
+//            if (!uploadedImageUrls.contains(imageUrl)) {
+//                uploadedImageUrls.add(imageUrl);
+//            }
+//        }
+
         blogDomain.setImage(uploadedImageUrls);
+
         return blogRepository.save(blogDomain);
 
     }
@@ -168,9 +181,7 @@ public class BlogService {
 
         List<String> imagesToDelete = new ArrayList<>(currentImageUrls);
         imagesToDelete.removeAll(updatedImageUrls);
-        for (String imageUrl : imagesToDelete) {
-            deleteImage(imageUrl);
-        }
+        for (String imageUrl : imagesToDelete) imageService.delete(imageUrl);
 
         if (blogUpdateRequestDto.getImageFiles() != null) {
             for (MultipartFile file : blogUpdateRequestDto.getImageFiles()) {
@@ -199,7 +210,7 @@ public class BlogService {
         // 연결된 이미지들 삭제
         if (blog.getImage() != null) {
             for (String imageUrl : blog.getImage()) {
-                deleteImage(imageUrl);
+                imageService.delete(imageUrl);
             }
         }
 
@@ -289,7 +300,7 @@ public class BlogService {
         blogDetailResponseDto.setNickname(nickname);
         blogDetailResponseDto.setCreateAt(blog.getCreateAt());
         blogDetailResponseDto.setTag(blog.getTag());
-        blogDetailResponseDto.setImage(blog.getImage());
+        blogDetailResponseDto.setImageUrl(blog.getImage());
         blogDetailResponseDto.setThumbnailImage(blog.getThumbnailImage());
 
         return blogDetailResponseDto;
