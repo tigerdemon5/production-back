@@ -31,6 +31,13 @@ public class BlogDto {
     public String getThumbnailUrl() {
         if (image != null && !image.isEmpty()) {
             String firstImage = image.get(0);
+
+            // R2 등 완전한 URL(http/https)은 그대로 반환
+            if (firstImage.startsWith("http://") || firstImage.startsWith("https://")) {
+                return firstImage;
+            }
+
+            // 과거 로컬 파일시스템 방식으로 저장된 파일명 호환용 (혹시 남아있는 옛날 글 대비)
             return firstImage.startsWith("/api/blog/images/")
                     ? firstImage
                     : "/api/blog/images/" + firstImage;
