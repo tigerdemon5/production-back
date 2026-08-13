@@ -34,4 +34,16 @@ server:
   servlet:
     session:
       timeout: 1h
+aws:
+  accessKey: ${SWLUG_ACCESSKEY}
+  secretKey: ${SWLUG_SECRETKEY}
+
+  s3:
+    endpointUrl: ${SWLUG_S3URL}
+    region: auto
+
+cloudflare:
+  r2:
+    bucket: ${SWLUG_BUCKET}
+    public-url: ${SWLUG_R2URL}
 
