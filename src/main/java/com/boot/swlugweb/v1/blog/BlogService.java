@@ -141,6 +141,10 @@ public class BlogService {
             }
         }
 
+        if(blogCreateDto.getImageUrl()!=null){
+            uploadedImageUrls.addAll(blogCreateDto.getImageUrl());
+        }
+
 //        // HTML 컨텐츠에서 이미지 URL 추출
 //        Pattern pattern = Pattern.compile("src=\"(/api/blog/images/[^\"]+)\"");
 //        Matcher matcher = pattern.matcher(blogCreateDto.getBoardContent());

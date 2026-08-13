@@ -1,5 +1,6 @@
 package com.boot.swlugweb.v1.notice;
 
+import com.boot.swlugweb.v1.image.ImageService;
 import com.boot.swlugweb.v1.mypage.MyPageRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -22,64 +23,45 @@ import java.util.stream.Collectors;
 
 @Service
 public class NoticeService {
-    @Value("${file.upload-dir}")
-    private String uploadDir;
 
     private final NoticeRepository noticeRepository;
     private final MyPageRepository myPageRepository;
+    private final ImageService imageService;
 
-    public NoticeService(NoticeRepository noticeRepository, MyPageRepository myPageRepository) {
+    public NoticeService(NoticeRepository noticeRepository, MyPageRepository myPageRepository, ImageService imageService) {
         this.noticeRepository = noticeRepository;
         this.myPageRepository = myPageRepository;
+        this.imageService = imageService;
     }
 
     // 이미지 저장 메소드
     public String saveImage(MultipartFile file) throws IOException {
-        try {
-            if (file.isEmpty()) {
-                throw new IllegalArgumentException("Empty file");
-            }
-
-            if (file.getSize() > 20 * 1024 * 1024) {
-                throw new IllegalArgumentException("File size exceeds maximum limit");
-            }
-
-            String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-            String extension = getFileExtension(originalFilename).toLowerCase();
-            Set<String> allowedExtensions = new HashSet<>(Arrays.asList(
-                    "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif", "tiff", "tif", "svg"
-            ));
-
-            if (!allowedExtensions.contains(extension)) {
-                throw new IllegalArgumentException("Invalid file extension");
-            }
-
-            String newFilename = UUID.randomUUID().toString() + "." + extension;
-            Path uploadPath = Paths.get(uploadDir);
-
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            Path destinationFile = uploadPath.resolve(newFilename);
-            Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
-
-            return "/api/notice/images/" + newFilename;
-        } catch (IOException e) {
-            throw e;
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Empty file");
         }
+
+        if (file.getSize() > 20 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds maximum limit");
+        }
+
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String extension = getFileExtension(originalFilename).toLowerCase();
+        Set<String> allowedExtensions = new HashSet<>(Arrays.asList(
+                "jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif", "tiff", "tif", "svg"
+        ));
+
+        if (!allowedExtensions.contains(extension)) {
+            throw new IllegalArgumentException("Invalid file extension");
+        }
+
+        return imageService.upload(file);
     }
+
 
     // 이미지 삭제 메소드
     private void deleteImage(String imageUrl) {
-        if (imageUrl != null && imageUrl.startsWith("/api/notice/images/")) {
-            String filename = imageUrl.substring("/api/notice/images/".length());
-            try {
-                Path imagePath = Paths.get(uploadDir).resolve(filename);
-                Files.deleteIfExists(imagePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            imageService.delete(imageUrl);
         }
     }
 
@@ -155,12 +137,16 @@ public class NoticeService {
         noticeDomain.setIsDelete(0);
 
         // 이미지 URL 처리
-        Pattern pattern = Pattern.compile("src=\"(/api/notice/images/[^\"]+)\"");
-        Matcher matcher = pattern.matcher(noticeCreateDto.getNoticeContents());
         List<String> imageUrls = new ArrayList<>();
-        while (matcher.find()) {
-            String imageUrl = matcher.group(1);
-            imageUrls.add(imageUrl);
+        if (noticeCreateDto.getNoticeContents() != null) {
+            Pattern pattern = Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"']");
+            Matcher matcher = pattern.matcher(noticeCreateDto.getNoticeContents());
+            while (matcher.find()) {
+                String imageUrl = matcher.group(1);
+                if (!imageUrls.contains(imageUrl)) {
+                    imageUrls.add(imageUrl);
+                }
+            }
         }
         noticeDomain.setImage(imageUrls);
 
@@ -177,10 +163,13 @@ public class NoticeService {
 
         // 새로운 컨텐츠에서 이미지 URL 추출
         if (noticeUpdateRequestDto.getNoticeContents() != null) {
-            Pattern pattern = Pattern.compile("src=\"(/api/notice/images/[^\"]+)\"");
+            Pattern pattern = Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"']");
             Matcher matcher = pattern.matcher(noticeUpdateRequestDto.getNoticeContents());
             while (matcher.find()) {
-                updatedImageUrls.add(matcher.group(1));
+                String imageUrl = matcher.group(1);
+                if (!updatedImageUrls.contains(imageUrl)) {
+                    updatedImageUrls.add(imageUrl);
+                }
             }
         }
 
@@ -203,7 +192,6 @@ public class NoticeService {
         NoticeDomain notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(id + " 게시물이 없습니다."));
 
-        // 연결된 이미지들 삭제
         if (notice.getImage() != null) {
             for (String imageUrl : notice.getImage()) {
                 deleteImage(imageUrl);

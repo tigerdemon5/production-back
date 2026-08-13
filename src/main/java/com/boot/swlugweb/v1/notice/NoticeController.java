@@ -21,9 +21,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/notice")
 public class NoticeController {
 
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-
     private final NoticeService noticeService;
 
     public NoticeController(NoticeService noticeService) {
@@ -120,31 +117,4 @@ public class NoticeController {
         }
     }
 
-    @GetMapping("/images/{filename:.+}")
-    @ResponseBody
-    public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
-        try {
-            Path imagePath = Paths.get(uploadDir).resolve(filename);
-            Resource resource = new UrlResource(imagePath.toUri());
-
-            if (resource.exists() && resource.isReadable()) {
-                String contentType = Files.probeContentType(imagePath);
-                if (contentType == null) {
-                    contentType = "application/octet-stream";
-                }
-
-                CacheControl cacheControl = CacheControl.maxAge(365, TimeUnit.DAYS);
-
-                return ResponseEntity.ok()
-                        .cacheControl(cacheControl)
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .header("Content-Disposition", "inline; filename=\"" + filename + "\"")
-                        .body(resource);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 }
