@@ -38,8 +38,14 @@ public class EmailService {
     //인증번호 확인
     public Boolean checkAuthNumber(String email, int authNum) {
         String key = "auth_code:" + email;
-        String savedAuthNum = (String) session.getAttribute(key).toString();
-        return savedAuthNum != null && savedAuthNum.equals(String.valueOf(authNum)); //저장된 수가 null이 아니고 입력값과 같다면 true
+        Object savedAuthNumObj = session.getAttribute(key);
+
+        if (savedAuthNumObj == null) {
+            return false;  // 인증번호를 요청한 적 없거나 세션 만료
+        }
+
+        int savedAuthNum = (Integer) savedAuthNumObj;
+        return savedAuthNum == authNum;
     }
 
     //임의의 6자리 양수 생성
