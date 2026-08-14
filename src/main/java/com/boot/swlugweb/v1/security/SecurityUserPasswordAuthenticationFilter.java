@@ -83,6 +83,8 @@ public class SecurityUserPasswordAuthenticationFilter extends UsernamePasswordAu
                 .findFirst()
                 .orElse("");
 
+        session.setAttribute("ROLE", role);
+
         LoginResponseDto successResponse = new LoginResponseDto(
                 true,
                 "로그인 성공",

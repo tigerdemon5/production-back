@@ -2,20 +2,15 @@ package com.boot.swlugweb.v1.blog;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/blog")
@@ -83,6 +78,7 @@ public class BlogController {
             HttpSession session
     ) {
         String userId = (String) session.getAttribute("USER");
+        String role = (String) session.getAttribute("ROLE");
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
@@ -91,7 +87,7 @@ public class BlogController {
             if (imageFiles != null && !imageFiles.isEmpty()) {
                 blogUpdateRequestDto.setImageFiles(imageFiles);
             }
-            blogService.updateBlog(blogUpdateRequestDto, userId);
+            blogService.updateBlog(blogUpdateRequestDto, userId,role);
 
             return ResponseEntity.status(302)
                     .header(HttpHeaders.LOCATION, "/api/blog")
@@ -107,12 +103,13 @@ public class BlogController {
             HttpSession session
     ) {
         String userId = (String) session.getAttribute("USER");
+        String role = (String) session.getAttribute("ROLE");
         if (userId == null) {
             return ResponseEntity.status(401).build();
         }
 
         try {
-            blogService.deleteBlog(blogDeleteRequestDto, userId);
+            blogService.deleteBlog(blogDeleteRequestDto, userId,role);
             return ResponseEntity.status(302)
                     .header(HttpHeaders.LOCATION, "/api/blog")
                     .build();

@@ -1,6 +1,5 @@
 package com.boot.swlugweb.v1.blog;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.boot.swlugweb.v1.image.ImageService;
 import com.boot.swlugweb.v1.mypage.MyPageRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,14 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -161,10 +154,10 @@ public class BlogService {
 
     }
 
-    public void updateBlog(BlogUpdateRequestDto blogUpdateRequestDto, String userId) throws IOException {
+    public void updateBlog(BlogUpdateRequestDto blogUpdateRequestDto, String userId, String userRole) throws IOException {
         BlogDomain blog = blogRepository.findById(blogUpdateRequestDto.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Blog not found"));
-
+        boolean isAdmin = "ROLE_ADMIN".equals(userRole);
         if (!blog.getUserId().equals(userId)) {
             throw new SecurityException("Not authorized");
         }
@@ -204,10 +197,11 @@ public class BlogService {
         blogRepository.save(blog);
     }
 
-    public void deleteBlog(BlogDeleteRequestDto blogDeleteRequestDto, String userId) {
+    public void deleteBlog(BlogDeleteRequestDto blogDeleteRequestDto, String userId, String userRole) {
         BlogDomain blog = blogRepository.findById(blogDeleteRequestDto.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Blog not found"));
 
+        boolean isAdmin = "ROLE_ADMIN".equals(userRole);
         if (!blog.getUserId().equals(userId)) {
             throw new SecurityException("Not authorized");}
 
