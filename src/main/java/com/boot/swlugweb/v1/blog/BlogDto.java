@@ -3,6 +3,8 @@ package com.boot.swlugweb.v1.blog;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.Field;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,7 +15,10 @@ public class BlogDto {
     @JsonIgnore
     private Integer boardCategory;
     private String boardTitle;
+    @Field("created_at")
     private LocalDateTime createAt;
+    @Field("updated_at")
+    private LocalDateTime updatedAt;
     @JsonIgnore
     private String userId;
     private String nickname;

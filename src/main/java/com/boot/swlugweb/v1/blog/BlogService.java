@@ -118,7 +118,9 @@ public class BlogService {
         blogDomain.setBoardCategory(blogCreateDto.getBoardCategory());
         blogDomain.setBoardTitle(blogCreateDto.getBoardTitle());
         blogDomain.setBoardContents(blogCreateDto.getBoardContent());
-        blogDomain.setCreateAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        blogDomain.setCreateAt(now);
+        blogDomain.setUpdatedAt(now);
         blogDomain.setTag(blogCreateDto.getTag());
         blogDomain.setIsPin(false);
         blogDomain.setIsSecure(0);
@@ -158,7 +160,7 @@ public class BlogService {
         BlogDomain blog = blogRepository.findById(blogUpdateRequestDto.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Blog not found"));
         boolean isAdmin = "ROLE_ADMIN".equals(userRole);
-        if (!blog.getUserId().equals(userId)) {
+        if (!isAdmin && !blog.getUserId().equals(userId)) {
             throw new SecurityException("Not authorized");
         }
 
@@ -193,7 +195,7 @@ public class BlogService {
         }
 
         blog.setImage(updatedImageUrls);
-        blog.setCreateAt(LocalDateTime.now());
+        blog.setUpdatedAt(LocalDateTime.now());
         blogRepository.save(blog);
     }
 
@@ -202,7 +204,7 @@ public class BlogService {
                 .orElseThrow(() -> new IllegalArgumentException("Blog not found"));
 
         boolean isAdmin = "ROLE_ADMIN".equals(userRole);
-        if (!blog.getUserId().equals(userId)) {
+        if (!isAdmin && !blog.getUserId().equals(userId)) {
             throw new SecurityException("Not authorized");}
 
         // 연결된 이미지들 삭제
@@ -297,6 +299,7 @@ public class BlogService {
         blogDetailResponseDto.setBoardContents(blog.getBoardContents());
         blogDetailResponseDto.setNickname(nickname);
         blogDetailResponseDto.setCreateAt(blog.getCreateAt());
+        blogDetailResponseDto.setUpdatedAt(blog.getUpdatedAt());
         blogDetailResponseDto.setTag(blog.getTag());
         blogDetailResponseDto.setImageUrl(blog.getImage());
         blogDetailResponseDto.setThumbnailImage(blog.getThumbnailImage());
